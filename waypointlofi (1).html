@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WaypointLofi — Every Beat, a Different Place</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --ink:        #0a0c12;
+    --ink-mid:    #111520;
+    --ink-card:   #161b27;
+    --gold:       #c8a96e;
+    --gold-dim:   #8a6f42;
+    --ivory:      #e8e2d4;
+    --ivory-muted:#9a9282;
+    --teal:       #2a4a5e;
+    --accent:     #c8a96e;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--ivory);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── STAR FIELD ── */
+  .stars {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      radial-gradient(1px 1px at 15% 20%, rgba(200,169,110,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 10%, rgba(200,169,110,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 35%, rgba(200,169,110,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 15%, rgba(200,169,110,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 60%, rgba(200,169,110,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 80%, rgba(200,169,110,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 70%, rgba(200,169,110,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 85%, rgba(200,169,110,0.3) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 55% 50%, rgba(200,169,110,0.15) 0%, transparent 100%);
+  }
+
+  /* ── MAP GRID ── */
+  .map-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(200,169,110,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,169,110,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 3rem;
+    background: linear-gradient(to bottom, rgba(10,12,18,0.95), transparent);
+    backdrop-filter: blur(4px);
+  }
+
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  .nav-tagline {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ivory-muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; z-index: 10;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem 4rem;
+  }
+
+  .hero-passport {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    opacity: 0.8;
+  }
+
+  .hero-passport::before,
+  .hero-passport::after {
+    content: '—';
+    margin: 0 0.75rem;
+    opacity: 0.5;
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3.5rem, 10vw, 8rem);
+    font-weight: 300;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--ivory);
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-title span {
+    display: block;
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--ivory-muted);
+    margin: 2rem auto 3rem;
+    max-width: 540px;
+    line-height: 1.6;
+  }
+
+  /* Compass rose — the signature element */
+  .compass {
+    width: 120px; height: 120px;
+    margin: 0 auto 3rem;
+    position: relative;
+    animation: compassSpin 60s linear infinite;
+  }
+
+  @keyframes compassSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .compass svg {
+    width: 100%; height: 100%;
+    filter: drop-shadow(0 0 12px rgba(200,169,110,0.4));
+  }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    padding: 1rem 2.5rem;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    background: var(--gold);
+    color: var(--ink);
+  }
+
+  .hero-scroll {
+    position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--ivory-muted);
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    animation: fadeUpDown 2s ease-in-out infinite;
+  }
+
+  @keyframes fadeUpDown {
+    0%, 100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+    50% { opacity: 0.8; transform: translateX(-50%) translateY(-4px); }
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex; align-items: center; gap: 1rem;
+    max-width: 900px; margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  .divider-line { flex: 1; height: 1px; background: rgba(200,169,110,0.2); }
+  .divider-icon { color: var(--gold); opacity: 0.6; font-size: 0.8rem; }
+
+  /* ── SECTIONS ── */
+  section {
+    position: relative; z-index: 10;
+    padding: 6rem 2rem;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 300;
+    line-height: 1.1;
+    color: var(--ivory);
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .section-body {
+    font-size: 1rem;
+    color: var(--ivory-muted);
+    max-width: 540px;
+    line-height: 1.8;
+  }
+
+  /* ── CONCEPT ── */
+  .concept {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6rem; align-items: center;
+  }
+
+  .concept-visual {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .concept-globe {
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    border: 1px solid rgba(200,169,110,0.2);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    background: radial-gradient(circle at 40% 35%, rgba(42,74,94,0.4), transparent 60%),
+                radial-gradient(circle at 70% 70%, rgba(200,169,110,0.05), transparent 50%);
+  }
+
+  .concept-globe::before {
+    content: '';
+    position: absolute; inset: -1px;
+    border-radius: 50%;
+    border: 1px solid rgba(200,169,110,0.1);
+    animation: pulse 4s ease-in-out infinite;
+  }
+
+  .concept-globe::after {
+    content: '';
+    position: absolute; inset: -20px;
+    border-radius: 50%;
+    border: 1px solid rgba(200,169,110,0.05);
+    animation: pulse 4s ease-in-out infinite 1s;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.03); opacity: 0.5; }
+  }
+
+  .globe-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 5rem;
+    font-weight: 300;
+    color: var(--gold);
+    opacity: 0.3;
+  }
+
+  /* ── DESTINATIONS GRID ── */
+  .destinations {
+    max-width: 1100px; margin: 0 auto;
+    text-align: center;
+  }
+
+  .destinations-header {
+    margin-bottom: 4rem;
+  }
+
+  .countries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+
+  .country-card {
+    background: var(--ink-card);
+    border: 1px solid rgba(200,169,110,0.1);
+    padding: 1.5rem 1rem;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 0.75rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .country-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(200,169,110,0.05), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .country-card:hover {
+    border-color: rgba(200,169,110,0.4);
+    transform: translateY(-2px);
+  }
+
+  .country-card:hover::before { opacity: 1; }
+
+  .country-flag { font-size: 2rem; }
+
+  .country-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--ivory);
+    letter-spacing: 0.05em;
+  }
+
+  .country-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--gold);
+    opacity: 0.6;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── PILLARS ── */
+  .pillars {
+    max-width: 1100px; margin: 0 auto;
+  }
+
+  .pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-top: 4rem;
+  }
+
+  .pillar {
+    padding: 2.5rem 2rem;
+    border-top: 1px solid rgba(200,169,110,0.2);
+    position: relative;
+  }
+
+  .pillar-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 4rem;
+    font-weight: 300;
+    color: rgba(200,169,110,0.1);
+    line-height: 1;
+    margin-bottom: 1rem;
+    position: absolute;
+    top: 1rem; right: 2rem;
+  }
+
+  .pillar-icon {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .pillar-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: var(--ivory);
+    margin-bottom: 0.75rem;
+  }
+
+  .pillar-body {
+    font-size: 0.9rem;
+    color: var(--ivory-muted);
+    line-height: 1.7;
+  }
+
+  /* ── EASTER EGGS ── */
+  .eggs {
+    max-width: 900px; margin: 0 auto;
+    text-align: center;
+  }
+
+  .egg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 3rem;
+    text-align: left;
+  }
+
+  .egg-item {
+    display: flex; gap: 1rem; align-items: flex-start;
+    padding: 1.25rem;
+    background: var(--ink-card);
+    border: 1px solid rgba(200,169,110,0.08);
+  }
+
+  .egg-emoji { font-size: 1.5rem; flex-shrink: 0; }
+
+  .egg-text {
+    font-size: 0.85rem;
+    color: var(--ivory-muted);
+    line-height: 1.5;
+  }
+
+  .egg-text strong {
+    display: block;
+    color: var(--ivory);
+    font-weight: 400;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    margin-bottom: 0.2rem;
+  }
+
+  /* ── CTA ── */
+  .cta-section {
+    text-align: center;
+    padding: 8rem 2rem;
+    position: relative; z-index: 10;
+    background: linear-gradient(to bottom, transparent, rgba(200,169,110,0.03), transparent);
+  }
+
+  .cta-section .section-title {
+    max-width: 600px;
+    margin: 1rem auto 2rem;
+  }
+
+  .cta-section .section-body {
+    margin: 0 auto 3rem;
+    text-align: center;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative; z-index: 10;
+    border-top: 1px solid rgba(200,169,110,0.1);
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .footer-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ivory-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-tagline { display: none; }
+    .concept { grid-template-columns: 1fr; gap: 3rem; text-align: center; }
+    .concept-visual { order: -1; }
+    .section-body { max-width: 100%; }
+    .pillars-grid { grid-template-columns: 1fr; }
+    .concept-globe { width: 200px; height: 200px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .compass, .concept-globe::before, .concept-globe::after, .hero-scroll {
+      animation: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars"></div>
+<div class="map-grid"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">WaypointLofi</a>
+  <span class="nav-tagline">every beat, a different place</span>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <p class="hero-passport">Your sonic passport to the world</p>
+
+  <!-- Compass rose SVG — signature element -->
+  <div class="compass">
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="48" stroke="#c8a96e" stroke-width="0.5" opacity="0.4"/>
+      <circle cx="50" cy="50" r="38" stroke="#c8a96e" stroke-width="0.3" opacity="0.2"/>
+      <!-- Cardinal lines -->
+      <line x1="50" y1="2" x2="50" y2="98" stroke="#c8a96e" stroke-width="0.3" opacity="0.3"/>
+      <line x1="2" y1="50" x2="98" y2="50" stroke="#c8a96e" stroke-width="0.3" opacity="0.3"/>
+      <line x1="15" y1="15" x2="85" y2="85" stroke="#c8a96e" stroke-width="0.2" opacity="0.15"/>
+      <line x1="85" y1="15" x2="15" y2="85" stroke="#c8a96e" stroke-width="0.2" opacity="0.15"/>
+      <!-- N arrow -->
+      <polygon points="50,6 46,28 50,24 54,28" fill="#c8a96e" opacity="0.9"/>
+      <!-- S arrow -->
+      <polygon points="50,94 46,72 50,76 54,72" fill="#c8a96e" opacity="0.4"/>
+      <!-- E dot -->
+      <circle cx="94" cy="50" r="1.5" fill="#c8a96e" opacity="0.5"/>
+      <!-- W dot -->
+      <circle cx="6" cy="50" r="1.5" fill="#c8a96e" opacity="0.5"/>
+      <!-- Center -->
+      <circle cx="50" cy="50" r="4" fill="none" stroke="#c8a96e" stroke-width="0.5" opacity="0.6"/>
+      <circle cx="50" cy="50" r="1.5" fill="#c8a96e" opacity="0.8"/>
+      <!-- N label -->
+      <text x="50" y="38" font-family="serif" font-size="6" fill="#c8a96e" opacity="0.7" text-anchor="middle">N</text>
+    </svg>
+  </div>
+
+  <h1 class="hero-title">
+    Waypoint
+    <span>Lofi</span>
+  </h1>
+
+  <p class="hero-sub">
+    Each video is a journey. Each beat carries the soul of a different place.
+    Close your eyes and let the music take you there.
+  </p>
+
+  <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="btn-primary">
+    ✦ Begin Your Journey
+  </a>
+
+  <div class="hero-scroll">
+    <span>scroll</span>
+    <span>↓</span>
+  </div>
+</section>
+
+<!-- DIVIDER -->
+<div class="divider">
+  <div class="divider-line"></div>
+  <span class="divider-icon">✦</span>
+  <div class="divider-line"></div>
+</div>
+
+<!-- CONCEPT -->
+<section>
+  <div class="concept">
+    <div class="concept-text">
+      <p class="section-label">The Concept</p>
+      <h2 class="section-title">Not just music.<br><em>A destination.</em></h2>
+      <p class="section-body">
+        WaypointLofi is built on a single idea: every culture deserves its own sound. 
+        Each video is a 2-hour immersive experience rooted in the instruments, textures, 
+        and soul of one place on Earth — crafted for focus, rest, and quiet discovery.
+      </p>
+      <br>
+      <p class="section-body">
+        While you study or unwind, your ears travel the world.
+      </p>
+    </div>
+    <div class="concept-visual">
+      <div class="concept-globe">
+        <span class="globe-text">🌍</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DESTINATIONS -->
+<section>
+  <div class="destinations">
+    <div class="destinations-header">
+      <p class="section-label">Destinations</p>
+      <h2 class="section-title">Where have we <em>been?</em></h2>
+    </div>
+    <div class="countries-grid">
+      <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="country-card">
+        <span class="country-flag">🇯🇵</span>
+        <span class="country-name">Japan</span>
+        <span class="country-tag">Tokyo Nights</span>
+      </a>
+      <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="country-card">
+        <span class="country-flag">🇧🇷</span>
+        <span class="country-name">Brazil</span>
+        <span class="country-tag">Rio Bossa</span>
+      </a>
+      <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="country-card">
+        <span class="country-flag">🇮🇹</span>
+        <span class="country-name">Italy</span>
+        <span class="country-tag">Amalfi Coast</span>
+      </a>
+      <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="country-card">
+        <span class="country-flag">🇫🇷</span>
+        <span class="country-name">France</span>
+        <span class="country-tag">Paris Evenings</span>
+      </a>
+      <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="country-card">
+        <span class="country-flag">🇺🇸</span>
+        <span class="country-name">USA</span>
+        <span class="country-tag">Midwest Nights</span>
+      </a>
+      <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="country-card">
+        <span class="country-flag">🇮🇳</span>
+        <span class="country-name">India</span>
+        <span class="country-tag">Jodhpur Dusk</span>
+      </a>
+      <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="country-card">
+        <span class="country-flag">🇬🇷</span>
+        <span class="country-name">Greece</span>
+        <span class="country-tag">Parthenon Sunset</span>
+      </a>
+      <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="country-card">
+        <span class="country-flag">🇪🇸</span>
+        <span class="country-name">Spain</span>
+        <span class="country-tag">Pueblo Blanco</span>
+      </a>
+      <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="country-card">
+        <span class="country-flag">🇹🇷</span>
+        <span class="country-name">Turkey</span>
+        <span class="country-tag">Bosphorus Midnight</span>
+      </a>
+      <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="country-card">
+        <span class="country-flag">🇲🇦</span>
+        <span class="country-name">Morocco</span>
+        <span class="country-tag">Blue Alleys</span>
+      </a>
+      <div class="country-card" style="border-style: dashed; opacity: 0.4; cursor: default;">
+        <span class="country-flag">🗺️</span>
+        <span class="country-name" style="color: var(--ivory-muted);">Next Stop</span>
+        <span class="country-tag">Coming Soon</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIVIDER -->
+<div class="divider">
+  <div class="divider-line"></div>
+  <span class="divider-icon">✦</span>
+  <div class="divider-line"></div>
+</div>
+
+<!-- PILLARS -->
+<section>
+  <div class="pillars">
+    <p class="section-label">What Makes It Different</p>
+    <h2 class="section-title">Three things no other<br><em>lofi channel does.</em></h2>
+    <div class="pillars-grid">
+      <div class="pillar">
+        <span class="pillar-num">I</span>
+        <span class="pillar-icon">🎵</span>
+        <h3 class="pillar-title">Culturally Authentic Sound</h3>
+        <p class="pillar-body">
+          Every video uses instruments native to that country — sitar for India, 
+          bouzouki for Greece, guembri for Morocco. The music doesn't just relax. 
+          It transports.
+        </p>
+      </div>
+      <div class="pillar">
+        <span class="pillar-num">II</span>
+        <span class="pillar-icon">🥚</span>
+        <h3 class="pillar-title">Hidden Cultural Easter Eggs</h3>
+        <p class="pillar-body">
+          Each scene is built with iconic objects and symbols from that culture — 
+          hidden in plain sight. Some are obvious. Some take multiple sessions to find. 
+          All are intentional.
+        </p>
+      </div>
+      <div class="pillar">
+        <span class="pillar-num">III</span>
+        <span class="pillar-icon">🧭</span>
+        <h3 class="pillar-title">A Journey, Not a Loop</h3>
+        <p class="pillar-body">
+          Each 2-hour session follows an emotional arc — from energetic arrival 
+          to meditative stillness. You don't just listen to it. 
+          You move through it.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EASTER EGGS -->
+<section>
+  <div class="eggs">
+    <p class="section-label">The Details</p>
+    <h2 class="section-title">Every scene <em>hides something.</em></h2>
+    <p class="section-body" style="margin: 0 auto 1rem; text-align: center;">
+      Look closer. Each image is filled with cultural references most people walk right past.
+    </p>
+    <div class="egg-grid">
+      <div class="egg-item">
+        <span class="egg-emoji">🏺</span>
+        <div class="egg-text">
+          <strong>Artifacts</strong>
+          Historic objects placed in plain sight — amphoras, calligraphy scrolls, copper trays.
+        </div>
+      </div>
+      <div class="egg-item">
+        <span class="egg-emoji">📚</span>
+        <div class="egg-text">
+          <strong>Literature</strong>
+          Book spines carrying real authors — Plato, Rumi, Tom Jobim, Hemingway.
+        </div>
+      </div>
+      <div class="egg-item">
+        <span class="egg-emoji">🎸</span>
+        <div class="egg-text">
+          <strong>Instruments</strong>
+          The native instrument of each country, always present somewhere in the scene.
+        </div>
+      </div>
+      <div class="egg-item">
+        <span class="egg-emoji">🌿</span>
+        <div class="egg-text">
+          <strong>Flora & Food</strong>
+          Oranges in Spain, argan nuts in Morocco, cherry blossoms in Japan.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <p class="section-label">Ready to Travel?</p>
+  <h2 class="section-title">Pick a destination.<br><em>Close your eyes.</em></h2>
+  <p class="section-body">
+    New countries added regularly. Each one a new passport stamp. 
+    Subscribe and never miss a departure.
+  </p>
+  <a href="https://www.youtube.com/@waypointlofi" target="_blank" class="btn-primary">
+    ✦ Visit WaypointLofi on YouTube
+  </a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p class="footer-logo">WaypointLofi</p>
+  <p class="footer-tag">every beat, a different place</p>
+</footer>
+
+</body>
+</html>
